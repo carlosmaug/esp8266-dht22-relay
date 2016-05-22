@@ -1,0 +1,1 @@
+void stdout_init();
