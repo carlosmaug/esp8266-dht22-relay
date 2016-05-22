@@ -34,7 +34,7 @@
 				<form name="wifiform" action="connect.cgi" method="post" style="display: inline;">
 					<div id="aps">Scanning...</div>
 					<p>WiFi password, if applicable: </p>
-					<p><input type="text" name="passwd" value="%WiFiPasswd%" id="button"> </p>
+					<p><input type="password" name="passwd" value="%WiFiPasswd%" id="button"> </p>
 					<input type="submit" name="connect" value="Connect" id="button" style="margin-right: 2em;">
 				</form>
 			</div>
