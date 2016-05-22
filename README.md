@@ -54,6 +54,8 @@ From the root of this repository, run `make`. This will build the two firmware i
 
 We have included all information and schemas inside the eagle directory. You can edit them using eagle software.
 
+![Schema](https://raw.githubusercontent.com/carlosmaug/esp8266-dht22-relay/master/screenshots/esquema.png)
+
 # Background
 
 This application is based on [Mathew Hall](https://github.com/mathew-hall/esp8266-dht) software, which in turn is based on others, like [Martin's DHT22 webserver](http://harizanov.com/2014/11/esp8266-powered-web-server-led-control-dht22-temperaturehumidity-sensor-reading/) implementation, which uses [sprite_tm's ESP8266 httpd](http://www.esp8266.com/viewtopic.php?f=6&t=376).
