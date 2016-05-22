@@ -5,25 +5,25 @@ Turns on/off a relay based on reading of temperature and humidity of a DHT22 or 
 Web interface lets you connect to your wifi, configure defaut values, see DHT readings, turn on/off the relay, and other things.
 
 In this version you will find:
-	- New Web interface, now responsive.
-	- New configuration web page added.
-	- New Relay control page.
-	- Configuration is kept after reset.
-	- Fallback to AP mode in case of loosing access to AP.
-	- Tons of code commenting, cleanup and beautifying.
-	- Tons of code and circuit testing.
-	- Added circuit schema.
-	- All configuration is now placed in a single file.
-	- Added deug mode to reduce console vervosity.
-	- Compatibility with esp iot sdk v1.2.0 (it does not compile against newer versions)
+- New Web interface, now responsive.
+- New configuration web page added.
+- New Relay control page.
+- Configuration is kept after reset.
+- Fallback to AP mode in case of loosing access to AP.
+- Tons of code commenting, cleanup and beautifying.
+- Tons of code and circuit testing.
+- Added circuit schema.
+- All configuration is now placed in a single file.
+- Added deug mode to reduce console vervosity.
+- Compatibility with esp iot sdk v1.2.0 (it does not compile against newer versions)
 
 Seccurity issues
-	- MANY.... 
-	- Wifi password is very easy to retrieve from the web interface.
-	- No support for ssl nor tls, or any other form of encription.
-	- No password support.
-	- It is steel pennding the use of snprintf.
-	- ETC..
+- MANY.... 
+- Wifi password is very easy to retrieve from the web interface.
+- No support for ssl nor tls, or any other form of encription.
+- No password support.
+- It is steel pennding the use of snprintf.
+- ETC..
 
 # Configuration
 
