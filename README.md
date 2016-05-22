@@ -22,7 +22,7 @@ Seccurity issues
 - Wifi password is very easy to retrieve from the web interface.
 - No support for ssl nor tls, or any other form of encription.
 - No password support.
-- It is steel pennding the use of snprintf.
+- It is still pending the use of snprintf.
 - ETC..
 
 # Configuration
