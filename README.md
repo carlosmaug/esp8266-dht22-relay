@@ -41,8 +41,18 @@ Make sure the IoT SDK and toolchain are set up according to the instructions on 
 
 From the root of this repository, run `make`. This will build the two firmware images. To update the webserver's HTML files, run `make webpages.espfs`.
 
+# Screenshots
+
+## Web interface
+
+![index](https://raw.githubusercontent.com/carlosmaug/esp8266-dht22-relay/master/screenshots/index.png)
+![dht](https://raw.githubusercontent.com/carlosmaug/esp8266-dht22-relay/master/screenshots/dht.png)
+![Realy settings](https://raw.githubusercontent.com/carlosmaug/esp8266-dht22-relay/master/screenshots/relay_config.png)
+![WIFI config](https://raw.githubusercontent.com/carlosmaug/esp8266-dht22-relay/master/screenshots/wifi_config.png)
+
 # Hardware
 
+We have included all information and schemas inside the eagle directory. You can edit them using eagle software.
 
 # Background
 
