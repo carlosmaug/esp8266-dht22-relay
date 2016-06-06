@@ -10,12 +10,11 @@ In this version you will find:
 - New Relay control page.
 - Configuration is kept after reset.
 - Fallback to AP mode in case of loosing access to AP.
-- Tons of code commenting, cleanup and beautifying.
 - Tons of code and circuit testing.
 - Added circuit schema.
 - All configuration is now placed in a single file.
 - Added deug mode to reduce console vervosity.
-- Compatibility with esp iot sdk v1.2.0 (it does not compile against newer versions)
+- Compatibility with esp iot sdk v1.5.4 
 
 Seccurity issues
 - MANY.... 
@@ -39,7 +38,7 @@ Make sure the IoT SDK and toolchain are set up according to the instructions on 
 	export XTENSA_TOOLS_ROOT="/opt/Espressif/crosstool-NG/builds/xtensa-lx106-elf/bin/"
 	export ESPTOOL="/opt/Espressif/esptool-py/esptool.py"
 
-From the root of this repository, run `make`. This will build the two firmware images. To update the webserver's HTML files, run `make webpages.espfs`.
+From the root of this repository, run `make`. This will build the two firmware images. 
 
 # Screenshots
 
