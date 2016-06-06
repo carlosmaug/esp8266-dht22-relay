@@ -18,14 +18,8 @@
  * list of all SSID reachabe and the signal power of each one. 
  */
 
-#include <string.h>
-#include <osapi.h>
-#include "user_interface.h"
-#include "mem.h"
-#include "httpd.h"
+#include <esp8266.h>
 #include "web.h"
-#include "io.h"
-#include "espmissingincludes.h"
 
 //WiFi access point data
 typedef struct {
@@ -56,7 +50,7 @@ static struct station_config stconf;
 
 void ICACHE_FLASH_ATTR webwifi_tpl(HttpdConnData *connData, char *token, void **arg) {
 	char buff[1024];
-	int x;
+	int mode;
 	static struct station_config stconf;
 
 	if (token == NULL) return;
@@ -64,18 +58,29 @@ void ICACHE_FLASH_ATTR webwifi_tpl(HttpdConnData *connData, char *token, void **
 	wifi_station_get_config(&stconf);
 
 	os_strcpy(buff, "Unknown");
-	if (os_strcmp(token, "WiFiMode") == 0) {
-		x=wifi_get_opmode();
-		if (x == 1) os_strcpy(buff, "Client");
-		if (x == 2) os_strcpy(buff, "AP only");
-		if (x == 3) os_strcpy(buff, "Client + AP");
-	} else if (os_strcmp(token, "currSsid") == 0) {
+
+	if (!strcmp(token, "WiFiMode")) {
+		mode = wifi_get_opmode();
+			
+		switch (mode) {
+			case 1:
+				os_strcpy(buff, "Client");
+				break;
+			case 2:
+				os_strcpy(buff, "AP only");
+				break;
+			case 3:
+				os_strcpy(buff, "Client + AP");
+				break;
+		}
+	} else if (!strcmp(token, "currSsid")) {
 		os_strcpy(buff, (char*)stconf.ssid);
-	} else if (os_strcmp(token, "WiFiPasswd") == 0) {
+	} else if (!strcmp(token, "WiFiPasswd")) {
 		os_strcpy(buff, (char*)stconf.password);
 	}
 
-	espconn_sent(connData->conn, (uint8 *)buff, os_strlen(buff));
+	httpdSend(connData, buff, -1);
+	return;
 }
 
 /**
@@ -93,7 +98,7 @@ int ICACHE_FLASH_ATTR webwifi_cgi_set_mode(HttpdConnData *connData) {
 		return HTTPD_CGI_DONE;
 	}
 
-	len = httpd_find_arg(connData->getArgs, "mode", buff, sizeof(buff));
+	len = httpdFindArg(connData->getArgs, "mode", buff, sizeof(buff));
 
 	if (len != 0) {
 		os_printf("Changing WIFI mode to: %s\n", buff);
@@ -101,7 +106,7 @@ int ICACHE_FLASH_ATTR webwifi_cgi_set_mode(HttpdConnData *connData) {
 		system_restart();
 	}
 
-	httpd_redirect(connData, "/wifi");
+	httpdRedirect(connData, "/wifi");
 	return HTTPD_CGI_DONE;
 }
 
@@ -229,9 +234,9 @@ int ICACHE_FLASH_ATTR webwifi_cgi_scan(HttpdConnData *connData) {
 	int len;
 	int i;
 	char buff[1024];
-	httpd_start_response(connData, 200);
-	httpd_header(connData, "Content-Type", "text/json");
-	httpd_end_headers(connData);
+	httpdStartResponse(connData, 200);
+	httpdHeader(connData, "Content-Type", "text/json");
+	httpdEndHeaders(connData);
 
 	if (cgiWifiAps.scanInProgress == 1) {
 		os_printf("{\"result\": { \"inProgress\": \"1\" } }\n");
@@ -324,8 +329,8 @@ int ICACHE_FLASH_ATTR webwifi_cgi_connect(HttpdConnData *connData) {
 		return HTTPD_CGI_DONE;
 	}
 	
-	httpd_find_arg(connData->postBuff, "essid", essid, sizeof(essid));
-	httpd_find_arg(connData->postBuff, "passwd", passwd, sizeof(passwd));
+	httpdFindArg(connData->post->buff, "essid", essid, sizeof(essid));
+	httpdFindArg(connData->post->buff, "passwd", passwd, sizeof(passwd));
 
 	os_strncpy((char*)stconf.ssid, essid, 32);
 	os_strncpy((char*)stconf.password, passwd, 64);
@@ -336,6 +341,6 @@ int ICACHE_FLASH_ATTR webwifi_cgi_connect(HttpdConnData *connData) {
 	os_timer_disarm(&reassTimer);
 	os_timer_setfn(&reassTimer, _reass_timer_cb, NULL);
 	os_timer_arm(&reassTimer, 1000, 0);
-	httpd_redirect(connData, "/wifi/connecting.html");
+	httpdRedirect(connData, "/wifi/connecting.html");
 	return HTTPD_CGI_DONE;
 }

@@ -14,10 +14,13 @@
  *
  */
 
-#include "osapi.h"
-#include "espmissingincludes.h"
-#include "user_interface.h"
-#include "gpio.h"
+
+#include <esp8266.h>
+
+//#include "osapi.h"
+//#include "espmissingincludes.h"
+//#include "user_interface.h"
+//#include "gpio.h"
 
 #include "io.h"
 #include "config.h"

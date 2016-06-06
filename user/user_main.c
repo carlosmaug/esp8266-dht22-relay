@@ -14,47 +14,57 @@
  *
  */
 
-#include "osapi.h"
-#include "espmissingincludes.h"
+#include <esp8266.h> 
+#include <httpd.h> 
+#include <httpdespfs.h> 
+#include "webpages-espfs.h"
+#include <espfs.h> 
 
 #include "ets_sys.h"
-#include "httpd.h"
 #include "io.h"
 #include "dht.h"
-#include "httpdespfs.h"
 #include "web.h"
 #include "webwifi.h"
 #include "wifi.h"
 #include "action.h"
 #include "config.h"
+#include "stdout.h"
 
 HttpdBuiltInUrl builtInUrls[]={
-	{"/", httpd_cgi_redirect, "/index.tpl"},
-	{"/dht22.tpl", httpdespfs_template, web_tpl_dht},
-	{"/index.tpl", httpdespfs_template, web_tpl_index},
-	{"/settings.tpl", httpdespfs_template, web_tpl_settings},
-	{"/relayconfig.tpl", httpdespfs_template, web_tpl_relay_config},
+	{"/", cgiRedirect, "/index.tpl"},
+	{"/index.tpl", cgiEspFsTemplate, web_tpl_index},
+	{"/settings.tpl", cgiEspFsTemplate, web_tpl_settings},
+	{"/relayconfig.tpl", cgiEspFsTemplate, web_tpl_relay_config},
 	{"/relayconfig.cgi", web_cgi_relay_config, NULL},
-	{"/relay.tpl", httpdespfs_template, web_tpl_relay},
 	{"/relay.cgi", web_cgi_relay, NULL},
 
 	//Routines to make the /wifi URL and everything beneath it work.
-	{"/wifi", httpd_cgi_redirect, "/wifi/wifi.tpl"},
-	{"/wifi/", httpd_cgi_redirect, "/wifi/wifi.tpl"},
+	{"/wifi", cgiRedirect, "/wifi/wifi.tpl"},
+	{"/wifi/", cgiRedirect, "/wifi/wifi.tpl"},
 	{"/wifi/wifiscan.cgi", webwifi_cgi_scan, NULL},
-	{"/wifi/wifi.tpl", httpdespfs_template, webwifi_tpl},
+	{"/wifi/wifi.tpl", cgiEspFsTemplate, webwifi_tpl},
 	{"/wifi/connect.cgi", webwifi_cgi_connect},
 	{"/wifi/setmode.cgi", webwifi_cgi_set_mode, NULL},
 
-	{"*", httpdespfs_hook, NULL}, //Catch-all cgi function for the filesystem
+	{"*", cgiEspFsHook, NULL}, //Catch-all cgi function for the filesystem
 	{NULL, NULL, NULL}
 };
 
 
 void user_init(void) {
+	stdout_init();
 	io_init();
 	dht_init(SENSORTYPE, POOLTIME);
-	httpd_init(builtInUrls, 80);
+
+	// 0x40200000 is the base address for spi flash memory mapping, ESPFS_POS is the position
+	// where image is written in flash that is defined in Makefile.
+#ifdef ESPFS_POS
+	espFsInit((void*)(0x40200000 + ESPFS_POS));
+#else
+	espFsInit((void*)(webpages_espfs_start));
+#endif
+	httpdInit(builtInUrls, 80);
+
         wifi_init();
 	config_init();	
         action_init();

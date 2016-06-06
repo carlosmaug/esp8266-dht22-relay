@@ -42,7 +42,8 @@ ESPTOOL		?= esptool.py
 ESPPORT		?= /dev/ttyUSB0
 #ESPDELAY indicates seconds to wait between flashing the two binary images
 ESPDELAY	?= 3
-ESPBAUD		?= 460800
+ESPBAUD		?= 115200 
+#ESPBAUD		?= 460800
 
 #Appgen path and name
 APPGEN		?= $(SDK_BASE)/tools/gen_appbin.py
@@ -82,6 +83,7 @@ OBJCOPY	:= $(XTENSA_TOOLS_ROOT)xtensa-lx106-elf-objcopy
 #Additional (maybe generated) ld scripts to link in
 EXTRA_LD_SCRIPTS:=
 
+THISDIR:=$(dir $(abspath $(lastword $(MAKEFILE_LIST))))
 
 ####
 #### no user configurable options below here
@@ -209,3 +211,4 @@ clean:
 	
 
 $(foreach bdir,$(BUILD_DIR),$(eval $(call compile-objects,$(bdir))))
+

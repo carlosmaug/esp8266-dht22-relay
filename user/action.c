@@ -27,12 +27,11 @@
  * into the configuration. SLEEP_TIME Defines the time between sensor readings.
  */
 
-#include <osapi.h>
-#include "espmissingincludes.h"
+#include <esp8266.h>
 
-#include "dht.h"
-#include "io.h"
-#include "config.h"
+#include <dht.h>
+#include <io.h>
+#include <config.h>
 
 /**
  * milliseconds between checks 

@@ -17,84 +17,18 @@
  * this file. 
  */
 
-#include <osapi.h>
-#include "espmissingincludes.h"
-
+#include <esp8266.h>
 #include "web.h"
+
 #include "io.h"
 #include "itoa.h"
 #include "dht.h"
 #include "config.h"
 
 //Debug mode 1 = on
-#define DEBUG 0 
+#define DEBUG 1 
 
 static long hitCounter = 0;
-
-/**
- * @brief Displays relay.tpl.
- *
- * This template shows the current state of the relay and let us turn it on and 
- * off according to the actual state.
- */
-
-void ICACHE_FLASH_ATTR web_tpl_relay(HttpdConnData *connData, char *token, void **arg) {
-	char buff[128];
-	int currRelayStatus = io_get_status();
-
-	if (!token) return;
-
-	os_strcpy(buff, "Unknown");
-
-	if (!os_strcmp(token, "relayStatus")) {
-		if (currRelayStatus) {
-			os_strcpy(buff, "on");
-		} else {
-			os_strcpy(buff, "off");
-		}
-	} else {
-		os_printf("Argument 'relayStatus' not found, check relay.tpl file.\n");
-	}
-
-# if DEBUG
-	os_printf("cgi_tpl_relay Buff: %s\n", buff);
-# endif
-
-	espconn_sent(connData->conn, (uint8 *)buff, os_strlen(buff));
-}
-
-/**
- * @brief Turns the realy on and off.
- *
- * It turns on and off the relay according to the data received. This CGI is
- * called by realy.tpl 
- */
-
-int ICACHE_FLASH_ATTR web_cgi_relay(HttpdConnData *connData) {
-	int len;
-	char buff[1024];
-	
-	if (connData->conn == NULL) {
-		//Connection aborted. Clean up.
-		return HTTPD_CGI_DONE;
-	}
-
-	len = httpd_find_arg(connData->getArgs, "relay", buff, sizeof(buff));
-	if (len) {
-		if (!os_strcmp(buff, "on")) {
-			io_enable(1);
-			io_timer(1);
-		} else {
-			io_enable(0);
-			io_timer(0);
-		}
-	} else {
-		os_printf("Argument 'relay' not found, check relay.tpl file.\n");
-	}
-
-	httpd_redirect(connData, "relay.tpl");
-	return HTTPD_CGI_DONE;
-}
 
 /**
  * @brief Displays settings.tpl.
@@ -103,6 +37,8 @@ int ICACHE_FLASH_ATTR web_cgi_relay(HttpdConnData *connData) {
  */
 
 void ICACHE_FLASH_ATTR web_tpl_settings(HttpdConnData *connData, char *token, void **arg) {
+	char buff[128];
+	httpdSend(connData, buff, -1);
 	return;
 }
 
@@ -119,21 +55,21 @@ void ICACHE_FLASH_ATTR web_tpl_relay_config(HttpdConnData *connData, char *token
 	char data[6];
 	struct config conf = config_read();
 
-	if (!token) return;
+	if (token == NULL) return;
 
 	os_strcpy(buff, "unknown");
 
-	if (!os_strcmp(token, "status")) {
+	if (!strcmp(token,"status")) {
 		if (conf.off) {
 			os_strcpy(buff, "off");
 		} else {
 			os_strcpy(buff, "on");
 		}
-	} else if (!os_strcmp(token, "humidity")) {
+	} else if (!strcmp(token, "humidity")) {
 		os_strcpy(buff, itoa(conf.hum, data));
-	} else if (!os_strcmp(token, "temperature")) {
+	} else if (!strcmp(token, "temperature")) {
 		os_strcpy(buff, itoa(conf.temp, data));
-	} else if (!os_strcmp(token, "time")) {
+	} else if (!strcmp(token, "time")) {
 		os_strcpy(buff, itoa(conf.time, data));
 	}
 
@@ -142,7 +78,8 @@ void ICACHE_FLASH_ATTR web_tpl_relay_config(HttpdConnData *connData, char *token
 	os_printf("cgi_tpl_relay_config buff: %s\n", buff);
 # endif
 
-	espconn_sent(connData->conn, (uint8 *)buff, os_strlen(buff));
+	httpdSend(connData, buff, -1);
+	return;
 }
 
 /**
@@ -162,7 +99,7 @@ int ICACHE_FLASH_ATTR web_cgi_relay_config(HttpdConnData *connData) {
 		return HTTPD_CGI_DONE;
 	}
 
-	len = httpd_find_arg(connData->getArgs, "relay", buff, sizeof(buff));
+	len = httpdFindArg(connData->getArgs, "relay", buff, sizeof(buff));
 	if (len) {
 		if (!os_strcmp(buff, "on")) {
 			conf.off = 0;
@@ -171,17 +108,17 @@ int ICACHE_FLASH_ATTR web_cgi_relay_config(HttpdConnData *connData) {
 		}
 	}
 
-	len = httpd_find_arg(connData->getArgs, "humidity", buff, sizeof(buff));
+	len = httpdFindArg(connData->getArgs, "humidity", buff, sizeof(buff));
 	if (len) {
 		conf.hum = atoi(buff);
 	}
 
-	len = httpd_find_arg(connData->getArgs, "temperature", buff, sizeof(buff));
+	len = httpdFindArg(connData->getArgs, "temperature", buff, sizeof(buff));
 	if (len) {
 		conf.temp = atoi(buff);
 	}
 
-	len = httpd_find_arg(connData->getArgs, "time", buff, sizeof(buff));
+	len = httpdFindArg(connData->getArgs, "time", buff, sizeof(buff));
 	if (len) {
 		conf.time = atoi(buff);
 	}
@@ -192,7 +129,7 @@ int ICACHE_FLASH_ATTR web_cgi_relay_config(HttpdConnData *connData) {
 
 	config_save(conf);
 
-	httpd_redirect(connData, "relayconfig.tpl");
+	httpdRedirect(connData, "relayconfig.tpl");
 	return HTTPD_CGI_DONE;
 }
 
@@ -206,47 +143,72 @@ int ICACHE_FLASH_ATTR web_cgi_relay_config(HttpdConnData *connData) {
 void ICACHE_FLASH_ATTR web_tpl_index(HttpdConnData *connData, char *token, void **arg) {
 	char buff[128];
 
-	if (!token) return;
+	if (token == NULL) return;
 
-	if (os_strcmp(token, "counter") == 0) {
-		hitCounter++;
-		os_sprintf(buff, "%ld", hitCounter);
-	}
+	struct DhtReading *dht = dht_read(0);
 
-	espconn_sent(connData->conn, (uint8 *)buff, os_strlen(buff));
-}
-
-/**
- * @brief Displays dht22.tpl.
- *
- * This template shows the readings of the DHT sensor. 
- */
-
-void ICACHE_FLASH_ATTR web_tpl_dht(HttpdConnData *connData, char *token, void **arg) {
-	char buff[128];
-
-	if (!token) return;
-
-	struct DhtReading *r = dht_read(0);
-	
-	os_strcpy(buff, "Unknown");
-
-	if (os_strcmp(token, "temperature") == 0) {
-		float lastTemp = r->temperature;
-                int integer = (int)(lastTemp);
+	if (!strcmp(token,"temperature")) {
+		float lastTemp = dht->temperature;
+        	int integer = (int)(lastTemp);
 		int decimal = (int)((lastTemp - (int)lastTemp)*100);
 
 		if (decimal < 0) {
 			decimal = -1*decimal;
 		}
 
-		os_sprintf(buff, "%d.%d", integer, decimal);		
-	} else if (os_strcmp(token, "humidity") == 0) {
-		float lastHum = r->humidity;
-		os_sprintf(buff, "%d.%d", (int)(lastHum),(int)((lastHum - (int)lastHum)*100) );		
-	} else if (os_strcmp(token, "sensor_present") == 0) {
-		os_sprintf(buff, r->success?"is":"isn't");
+		os_sprintf(buff, "%d.%d", integer, decimal);
+	} else if (!strcmp(token, "humidity")) {
+		float lastHum = dht->humidity;
+		os_sprintf(buff, "%d.%d", (int)(lastHum),(int)((lastHum - (int)lastHum)*100) );
+	} else if (!strcmp(token, "sensor_present")) {
+		os_sprintf(buff, dht->success ? "is" : "isn't");
+	} else if (!strcmp(token, "relayStatus")) {
+		int currRelayStatus = io_get_status();
+
+		if (currRelayStatus) {
+			os_strcpy(buff, "on");
+		} else {
+			os_strcpy(buff, "off");
+		}
+	} else if (!strcmp(token, "counter")) {
+		hitCounter++;
+		os_sprintf(buff, "%ld", hitCounter);
 	}
-	
-	espconn_sent(connData->conn, (uint8 *)buff, os_strlen(buff));
+
+	httpdSend(connData, buff, -1);
+	return;
 }
+
+/**
+ * @brief Turns the realy on and off.
+ *
+ * It turns on and off the relay according to the data received. This CGI is
+ * called by realy.tpl 
+ */
+
+int ICACHE_FLASH_ATTR web_cgi_relay(HttpdConnData *connData) {
+	int len;
+	char buff[1024];
+	
+	if (connData->conn == NULL) {
+		//Connection aborted. Clean up.
+		return HTTPD_CGI_DONE;
+	}
+
+	len = httpdFindArg(connData->getArgs, "relay", buff, sizeof(buff));
+	if (len) {
+		if (!os_strcmp(buff, "on")) {
+			io_enable(1);
+			io_timer(1);
+		} else {
+			io_enable(0);
+			io_timer(0);
+		}
+	} else {
+		os_printf("Argument 'relay' not found, check relay.tpl file.\n");
+	}
+
+	httpdRedirect(connData, "index.tpl");
+	return HTTPD_CGI_DONE;
+}
+

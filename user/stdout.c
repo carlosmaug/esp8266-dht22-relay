@@ -13,10 +13,8 @@
  *
  */
 
-#include "espmissingincludes.h"
-#include "ets_sys.h"
-#include "osapi.h"
-#include "uart_hw.h"
+#include <esp8266.h>
+#include <uart_hw.h>
 
 static void ICACHE_FLASH_ATTR _stdout_uart_txd(char c) {
 	// Wait until there is room in the FIFO

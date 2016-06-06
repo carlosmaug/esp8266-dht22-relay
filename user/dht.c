@@ -44,15 +44,9 @@
  * This file contains DHT driver and other funcionts related. 
  */
 
-#include "ets_sys.h"
-#include "osapi.h"
-#include "espmissingincludes.h"
-#include "c_types.h"
-#include "user_interface.h"
-#include "espconn.h"
-#include "mem.h"
-#include "gpio.h"
-#include "dht.h"
+#include <esp8266.h>
+
+#include <dht.h>
 
 #define MAXTIMINGS 10000
 #define DHT_MAXCOUNT 32000
@@ -63,6 +57,9 @@
 #define DHT_PIN 2 
 
 enum EDhtType SENSOR;
+
+void ets_intr_lock(void);
+void ets_intr_unlock(void);
 
 static struct DhtReading reading = {
 	.success = 0

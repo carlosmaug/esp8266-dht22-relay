@@ -26,12 +26,8 @@
  * Ralay is turned on and off depending on DHT readins and the parameters set 
  */
 
-#include "ets_sys.h"
-#include "osapi.h"
-#include "spi_flash.h"
-#include "espmissingincludes.h"
-#include "config.h"
-#include "mem.h"
+#include <esp8266.h> 
+#include <config.h> 
 
 // https://github.com/esp8266/esp8266-wiki/wiki/Memory-Map
 // Acording to this map we wave 4k free starting on 0x7B00
