@@ -24,8 +24,10 @@
 //WiFi access point data
 typedef struct {
 	char ssid[32];
+	char bssid[8];
 	char rssi;
 	char enc;
+	int channel;
 } ApData;
 
 //Scan result
@@ -36,7 +38,7 @@ typedef struct {
 } ScanResultData;
 
 //Static scan status storage.
-ScanResultData cgiWifiAps;
+static ScanResultData cgiWifiAps;
 
 //Temp store for new ap info.
 static struct station_config stconf;
@@ -120,21 +122,20 @@ int ICACHE_FLASH_ATTR webwifi_cgi_set_mode(HttpdConnData *connData) {
 void ICACHE_FLASH_ATTR _webwifi_scan_done_cb(void *arg, STATUS status) {
 	int counter;
 	struct bss_info *bss_link = (struct bss_info *)arg;
-	os_printf("wifiScanDoneCb %d\n", status);
+	os_printf("_webwifi_scan_done_cb %d\n", status);
 
 	if (status != OK) {
 		cgiWifiAps.scanInProgress = 0;
-		wifi_station_disconnect(); //test HACK
 		return;
 	}
 
-	//Clear previous ap data if needed.
+	// Clear previous ap data if needed.
 	if (cgiWifiAps.apData != NULL) {
-		for (counter = 0; counter < cgiWifiAps.noAps; counter++) os_free(cgiWifiAps.apData[counter]);
-		os_free(cgiWifiAps.apData);
+		for (counter = 0; counter < cgiWifiAps.noAps; counter++) free(cgiWifiAps.apData[counter]);
+		free(cgiWifiAps.apData);
 	}
 
-	//Count amount of access points found.
+	// Count amount of access points found.
 	counter = 0;
 
 	while (bss_link != NULL) {
@@ -142,25 +143,48 @@ void ICACHE_FLASH_ATTR _webwifi_scan_done_cb(void *arg, STATUS status) {
 		counter++;
 	}
 
-	//Allocate memory for access point data
+	// Allocate memory for access point data
 	cgiWifiAps.apData = (ApData **)os_malloc(sizeof(ApData *)*counter);
+
+        if (cgiWifiAps.apData == NULL) {
+                os_printf("_webwifi_scan_done_cb: Out of memory allocating apData\n");
+                return;
+        }
+
 	cgiWifiAps.noAps = counter;
 
-	//Copy access point data to the static struct
+	// Copy access point data to the static struct
 	bss_link = (struct bss_info *)arg;
 	counter = 0;
 
 	while (bss_link != NULL) {
-		cgiWifiAps.apData[counter] = (ApData *)os_malloc(sizeof(ApData));
-		cgiWifiAps.apData[counter]->rssi = bss_link->rssi;
-		cgiWifiAps.apData[counter]->enc = bss_link->authmode;
-		strncpy(cgiWifiAps.apData[counter]->ssid, (char*)bss_link->ssid, 32);
 
-		bss_link = bss_link->next.stqe_next;
+                if (counter >= cgiWifiAps.noAps) {
+                        // This means the bss_link changed under our nose. Shouldn't happen!
+                        // Break because otherwise we will write in unallocated memory.
+                        os_printf("_webwifi_scan_done_cb: I have more than the allocated %d aps!\n", cgiWifiAps.noAps);
+                        break;
+                }
+
+		cgiWifiAps.apData[counter] = (ApData *)os_malloc(sizeof(ApData));
+
+                if (cgiWifiAps.apData[counter] == NULL) {
+                        os_printf("_webwifi_scan_done_cb: Can't allocate mem for ap buff.\n");
+                        cgiWifiAps.scanInProgress = 0;
+                        return;
+                }
+
+                cgiWifiAps.apData[counter]->rssi=bss_link->rssi;
+                cgiWifiAps.apData[counter]->channel=bss_link->channel;
+                cgiWifiAps.apData[counter]->enc=bss_link->authmode;
+                strncpy(cgiWifiAps.apData[counter]->ssid, (char*)bss_link->ssid, 32);
+                strncpy(cgiWifiAps.apData[counter]->bssid, (char*)bss_link->bssid, 6);
+
+                bss_link = bss_link->next.stqe_next;
 		counter++;
 	}
 
-	os_printf("Scan done: found %d APs\n", counter);
+	os_printf("_webwifi_scan_done_cb: Scan done: found %d APs\n", counter);
 	//We're done.
 	cgiWifiAps.scanInProgress = 0;
 }
@@ -205,19 +229,11 @@ static void ICACHE_FLASH_ATTR _print_wifi_status(uint8 station_status) {
  */
 
 static void ICACHE_FLASH_ATTR _webwifi_start_scan() {
-	int conn;
-	cgiWifiAps.scanInProgress=1;
-	conn = wifi_station_get_connect_status();
-    
-        os_printf("Starting AP Scan...\n");
-        _print_wifi_status(conn);
+	
+	if (cgiWifiAps.scanInProgress) return;
 
-	if (conn != STATION_GOT_IP) {
-		//Unit probably is trying to connect to a bogus AP. This messes up scanning. Stop that.
-		os_printf("WIFI connection status = %d. Disconnecting...\n", conn);
-		wifi_station_disconnect();
-	}
-
+	cgiWifiAps.scanInProgress = 1;
+	os_printf("Starting AP Scan...\n");
 	wifi_station_scan(NULL, _webwifi_scan_done_cb);
 }
 
@@ -241,11 +257,11 @@ int ICACHE_FLASH_ATTR webwifi_cgi_scan(HttpdConnData *connData) {
 	if (cgiWifiAps.scanInProgress == 1) {
 		os_printf("{\"result\": { \"inProgress\": \"1\" } }\n");
 		len = os_sprintf(buff, "{\n \"result\": { \n\"inProgress\": \"1\"\n }\n}\n");
-		espconn_sent(connData->conn, (uint8 *)buff, len);
+		httpdSend(connData, buff, len);
 	} else {
 		os_printf("{\"result\": { \n\"inProgress\": \"0\", \n\"APs\": [\n");
 		len = os_sprintf(buff, "{\n \"result\": { \n\"inProgress\": \"0\", \n\"APs\": [\n");
-		espconn_sent(connData->conn, (uint8 *)buff, len);
+		httpdSend(connData, buff, len);
 
 		if (cgiWifiAps.apData == NULL) cgiWifiAps.noAps = 0;
 
@@ -256,12 +272,12 @@ int ICACHE_FLASH_ATTR webwifi_cgi_scan(HttpdConnData *connData) {
 			len = os_sprintf(buff, "{\"essid\": \"%s\", \"rssi\": \"%d\", \"enc\": \"%d\"}%s\n", 
 					cgiWifiAps.apData[i]->ssid, cgiWifiAps.apData[i]->rssi, 
 					cgiWifiAps.apData[i]->enc, (i == cgiWifiAps.noAps-1)?"":",");
-			espconn_sent(connData->conn, (uint8 *)buff, len);
+			httpdSend(connData, buff, len);
 		}
 
 		os_printf("]\n}\n}\n");
 		len = os_sprintf(buff, "]\n}\n}\n");
-		espconn_sent(connData->conn, (uint8 *)buff, len);
+		httpdSend(connData, buff, len);
 		_webwifi_start_scan();
 	}
 

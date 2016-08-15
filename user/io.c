@@ -25,7 +25,7 @@
 #include "io.h"
 #include "config.h"
 
-#define REALYGPIO 0 
+#define REALYGPIO 2 
 
 void _io_off (void* arg);
 static int status = 0;
@@ -61,8 +61,8 @@ int ICACHE_FLASH_ATTR io_get_status() {
  */
 
 void io_init() {
-	//Set GPIO0 to output mode.
-	PIN_FUNC_SELECT(PERIPHS_IO_MUX_GPIO2_U, FUNC_GPIO0);
+	//Set GPIO to output mode.
+	PIN_FUNC_SELECT(PERIPHS_IO_MUX_GPIO2_U, FUNC_GPIO2);
 	GPIO_OUTPUT_SET(REALYGPIO, 0);
 	status = 0;
 }

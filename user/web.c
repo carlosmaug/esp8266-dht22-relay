@@ -37,8 +37,8 @@ static long hitCounter = 0;
  */
 
 void ICACHE_FLASH_ATTR web_tpl_settings(HttpdConnData *connData, char *token, void **arg) {
-	char buff[128];
-	httpdSend(connData, buff, -1);
+//	char buff[128];
+//	httpdSend(connData, buff, -1);
 	return;
 }
 
