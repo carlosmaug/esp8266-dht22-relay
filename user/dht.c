@@ -54,7 +54,7 @@
 
 //Debug 1 = on
 #define DEBUG 0
-#define DHT_PIN 2 
+#define DHT_PIN 0 
 
 enum EDhtType SENSOR;
 
@@ -230,8 +230,8 @@ struct DhtReading *ICACHE_FLASH_ATTR dht_read(int force) {
 
 void dht_init(enum EDhtType DhtType, uint32_t polltime) {
         SENSOR = DhtType;
-	// Set GPIO2 to output mode for DHT22
-	PIN_FUNC_SELECT(PERIPHS_IO_MUX_GPIO0_U, FUNC_GPIO2);
+	// Set GPIO to output mode for DHT22
+	PIN_FUNC_SELECT(PERIPHS_IO_MUX_GPIO0_U, FUNC_GPIO0);
 	
 	os_printf("Starting readings of DHT type %d, poll interval of %d\n", SENSOR, (int)polltime);
 	
